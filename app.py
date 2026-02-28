@@ -23,38 +23,49 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max upload
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 MAKE_WEBHOOK_URL = os.getenv("MAKE_WEBHOOK_URL", "")
 
-EXTRACTION_PROMPT = """You are a legal AI assistant specializing in parsing police accident reports.
+EXTRACTION_PROMPT = """You are a legal AI assistant for a personal injury law firm. Your job is to parse police accident reports and correctly identify the CLIENT (injured party the firm represents) vs the DEFENDANT (at-fault / adverse party).
 
-Analyze the attached police report document and extract the following fields.
+CRITICAL — HOW TO IDENTIFY CLIENT vs DEFENDANT:
+1. The CLIENT is the person who was STRUCK, HIT, or INJURED by the other party.
+2. The DEFENDANT is the person who CAUSED the accident (ran a red light, failed to yield, rear-ended, made an improper turn, etc.).
+3. In NYC MV-104 reports: read the narrative carefully — the driver described as causing the collision is the DEFENDANT. The other driver is the CLIENT.
+4. Look for fault indicators in the narrative: "Vehicle 1 struck Vehicle 2" means Vehicle 2's driver is likely the CLIENT.
+5. If the report header or title contains "X v Y" or "X vs Y", X is the CLIENT and Y is the DEFENDANT.
+6. Count ALL injured persons mentioned anywhere in the report (including passengers).
+
+Analyze the attached police report and extract these fields.
 Return ONLY a valid JSON object with these exact keys (no markdown, no explanation):
 
 {
-  "client_name": "Full name of the client/victim (LAST, FIRST format → convert to FIRST LAST)",
-  "client_first_name": "First name only",
-  "client_last_name": "Last name only",
-  "client_dob": "Date of birth (MM/DD/YYYY)",
-  "client_gender": "Male or Female",
-  "client_address": "Full street address",
-  "client_phone": "Phone number if available, otherwise empty string",
-  "client_email": "Email if available, otherwise empty string",
-  "client_vehicle_plate": "Vehicle registration plate number",
-  "defendant_name": "Full name of the adverse party (FIRST LAST format)",
-  "defendant_first_name": "First name of defendant",
-  "defendant_last_name": "Last name of defendant",
+  "client_name": "Full name of the CLIENT/injured party (FIRST LAST format)",
+  "client_first_name": "CLIENT's first name",
+  "client_last_name": "CLIENT's last name",
+  "client_dob": "CLIENT's date of birth (MM/DD/YYYY)",
+  "client_gender": "CLIENT's gender — Male or Female",
+  "client_address": "CLIENT's full street address",
+  "client_phone": "CLIENT's phone number if listed, otherwise empty string",
+  "client_email": "",
+  "client_vehicle_plate": "CLIENT's vehicle registration plate number",
+  "defendant_name": "Full name of the DEFENDANT/at-fault party (FIRST LAST format)",
+  "defendant_first_name": "DEFENDANT's first name",
+  "defendant_last_name": "DEFENDANT's last name",
   "accident_date": "Date of the accident (MM/DD/YYYY)",
-  "accident_location": "Full location/address of the accident",
-  "direction_of_travel": "Direction client was traveling (e.g., Northbound)",
-  "number_of_injured": "Number of people injured (integer as string, '0' if none)",
-  "accident_narrative": "Full narrative/description of what happened from the report",
-  "police_report_number": "Report/case number if available"
+  "accident_location": "Full location including street, county/borough, city, and state",
+  "direction_of_travel": "Direction the CLIENT's vehicle was traveling (Northbound, Southbound, Eastbound, or Westbound)",
+  "number_of_injured": "Total number of injured persons in the accident (integer as string, '0' if none)",
+  "accident_narrative": "The COMPLETE narrative/description from the officer's report — include every sentence",
+  "police_report_number": "Official report or case number"
 }
 
-Important rules:
-- Convert names from LAST, FIRST to FIRST LAST format
-- If a field is not found in the document, use an empty string ""
-- For accident_narrative, include the full narrative text from the report
-- Dates should be in MM/DD/YYYY format
-- Return ONLY the JSON object, nothing else"""
+Rules:
+- CLIENT = injured/victim party. DEFENDANT = at-fault/adverse party. Do NOT swap them.
+- client_email is ALWAYS an empty string (police reports never contain emails).
+- Convert all names from LAST, FIRST to FIRST LAST format.
+- For number_of_injured, count every injured person mentioned (drivers + passengers).
+- For direction_of_travel, report the CLIENT's travel direction specifically.
+- Dates must be in MM/DD/YYYY format.
+- If a field is not found, use an empty string "".
+- Return ONLY the JSON object, nothing else."""
 
 
 def parse_police_report(pdf_bytes: bytes) -> dict:

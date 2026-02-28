@@ -559,6 +559,31 @@
       document.getElementById('calendly_display').textContent = data.calendly_link || '—';
     }
 
+    // ── Compute Derived Fields ──
+    function computeSOL(accidentDateStr) {
+      if (!accidentDateStr) return '';
+      const parts = accidentDateStr.split('/');
+      if (parts.length !== 3) return '';
+      const m = parseInt(parts[0], 10);
+      const d = parseInt(parts[1], 10);
+      const y = parseInt(parts[2], 10);
+      if (isNaN(m) || isNaN(d) || isNaN(y)) return '';
+      const solYear = y + 8;
+      return `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${solYear}`;
+    }
+
+    function computeClaimType(numInjured) {
+      const n = parseInt(numInjured, 10);
+      return (n > 0) ? 'Bodily Injury & Property Damage' : 'Property Damage Only';
+    }
+
+    function getSeasonalCalendlyLink() {
+      const month = new Date().getMonth() + 1;
+      return (month >= 3 && month <= 8)
+        ? 'https://calendly.com/swans-santiago-p/spring-summer'
+        : 'https://calendly.com/swans-santiago-p/winter-autumn';
+    }
+
     // ── Collect Edited Data ──
     function collectFormData() {
       const data = {};
@@ -571,12 +596,10 @@
       data.client_name = `${data.client_first_name} ${data.client_last_name}`.trim();
       data.defendant_name = `${data.defendant_first_name} ${data.defendant_last_name}`.trim();
 
-      // Keep derived fields from original extraction
-      if (extractedData) {
-        data.statute_of_limitations_date = extractedData.statute_of_limitations_date;
-        data.calendly_link = extractedData.calendly_link;
-        data.claim_type = extractedData.claim_type;
-      }
+      // Recalculate derived fields from current form values
+      data.statute_of_limitations_date = computeSOL(data.accident_date);
+      data.claim_type = computeClaimType(data.number_of_injured);
+      data.calendly_link = getSeasonalCalendlyLink();
 
       return data;
     }
