@@ -74,23 +74,31 @@ def parse_police_report(pdf_bytes: bytes, filename: str = "") -> dict:
 
     pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
 
-    # Build the prompt, including filename context if available
-    prompt = EXTRACTION_PROMPT
+    # Build system message with filename context so Claude reads it FIRST
+    system_msg = ""
     if filename:
-        prompt += f"\n\nADDITIONAL CONTEXT — The uploaded file is named: \"{filename}\"\n"
-        prompt += "FILENAME RULES (these OVERRIDE any ambiguity in the report narrative):\n"
-        prompt += "1. If the filename follows 'FIRSTNAME_LASTNAME_v_FIRSTNAME_LASTNAME', the FIRST person is the CLIENT and the SECOND is the DEFENDANT.\n"
-        prompt += "2. If the filename contains only ONE person's name (e.g., 'FIRSTNAME_LASTNAME_police_report'), that person IS the CLIENT. The other driver in the report is the DEFENDANT.\n"
-        prompt += "3. The filename is set by the law firm and ALWAYS refers to their client first.\n"
-        prompt += "This is a STRONG OVERRIDE — use the filename to resolve any ambiguity in the narrative."
+        system_msg = (
+            f"CRITICAL CONTEXT: The uploaded file is named \"{filename}\". "
+            "The filename is set by the law firm and ALWAYS names their CLIENT first. "
+            "If the filename follows 'FIRSTNAME_LASTNAME_v_FIRSTNAME_LASTNAME', "
+            "the FIRST person is the CLIENT and the SECOND is the DEFENDANT. "
+            "If the filename contains only ONE person's name (e.g., 'FIRSTNAME_LASTNAME_police_report'), "
+            "that person IS the CLIENT — the other driver in the report is the DEFENDANT. "
+            "This OVERRIDES any ambiguity in the police report narrative. "
+            "You MUST assign the person named in the filename as the CLIENT."
+        )
 
-    response = client.messages.create(
-        model="claude-sonnet-4-5-20250929",
-        max_tokens=4096,
-        messages=[
+    api_kwargs = {
+        "model": "claude-sonnet-4-5-20250929",
+        "max_tokens": 4096,
+        "messages": [
             {
                 "role": "user",
                 "content": [
+                    {
+                        "type": "text",
+                        "text": EXTRACTION_PROMPT,
+                    },
                     {
                         "type": "document",
                         "source": {
@@ -99,14 +107,14 @@ def parse_police_report(pdf_bytes: bytes, filename: str = "") -> dict:
                             "data": pdf_b64,
                         },
                     },
-                    {
-                        "type": "text",
-                        "text": prompt,
-                    },
                 ],
             }
         ],
-    )
+    }
+    if system_msg:
+        api_kwargs["system"] = system_msg
+
+    response = client.messages.create(**api_kwargs)
 
     text_block = next(b for b in response.content if b.type == "text")
     raw_text = text_block.text.strip()
