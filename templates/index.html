@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swans Legal AI — Police Report Verification</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a3a5c;
+      --primary-light: #2a5a8c;
+      --accent: #0f7b5f;
+      --accent-light: #e8f5f0;
+      --danger: #c0392b;
+      --warning: #e67e22;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --border: #dce1e8;
+      --text: #2c3e50;
+      --text-muted: #7f8c8d;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --radius: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.3rem; font-weight: 600; }
+    header .badge {
+      background: var(--accent);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .container { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    /* ── Upload Section ── */
+    .upload-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: var(--shadow);
+      text-align: center;
+      border: 2px dashed var(--border);
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+
+    .upload-section.dragover {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .upload-section h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .upload-section p { color: var(--text-muted); font-size: 0.9rem; }
+
+    .upload-section .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+      opacity: 0.5;
+    }
+
+    .upload-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.6rem 1.5rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .upload-btn:hover { background: var(--primary-light); }
+
+    #fileInput { display: none; }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      margin: 1.5rem 0;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .status-bar.info { display: flex; background: #e8f4fd; color: #1a6fa8; border: 1px solid #b8daef; }
+    .status-bar.success { display: flex; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .status-bar.error { display: flex; background: #fdecea; color: #c0392b; border: 1px solid #f5c6cb; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Verification Form ── */
+    .verification-panel {
+      display: none;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-header h2 { font-size: 1.1rem; font-weight: 600; }
+    .claim-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .claim-badge.injury { background: #e74c3c; }
+    .claim-badge.property { background: var(--warning); }
+
+    .form-body { padding: 1.5rem; }
+
+    .field-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .field-group.full { grid-template-columns: 1fr; }
+
+    .field-group h3 {
+      grid-column: 1 / -1;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .field input, .field textarea, .field select {
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus, .field textarea:focus, .field select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(26,58,92,0.1);
+    }
+
+    .field textarea { resize: vertical; min-height: 80px; }
+
+    .field.span-2 { grid-column: 1 / -1; }
+
+    .derived-fields {
+      background: var(--accent-light);
+      border: 1px solid #b2dfdb;
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .derived-fields h3 {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .derived-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      font-size: 0.9rem;
+    }
+
+    .derived-row .label { color: var(--text-muted); }
+    .derived-row .value { font-weight: 600; }
+
+    /* ── Action Buttons ── */
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      padding: 1rem 1.5rem;
+      background: #f8f9fa;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      padding: 0.65rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #0a6b52; }
+    .btn-primary:disabled { background: #95a5a6; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #ecf0f1;
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #dfe6e9; }
+
+    /* ── Result Section ── */
+    .result-section {
+      display: none;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .result-section .checkmark {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 1rem;
+    }
+
+    .result-section h2 { color: var(--accent); margin-bottom: 0.5rem; }
+    .result-section p { color: var(--text-muted); }
+
+    .json-preview {
+      margin-top: 1rem;
+      text-align: left;
+      background: #f8f9fa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      max-height: 300px;
+      overflow: auto;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 768px) {
+      .field-group { grid-template-columns: 1fr; }
+      .field.span-2 { grid-column: 1; }
+      .actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Swans Legal AI</h1>
+    <span class="badge">POLICE REPORT VERIFICATION</span>
+  </header>
+
+  <div class="container">
+    <!-- Upload Section -->
+    <div class="upload-section" id="uploadArea">
+      <span class="icon">&#128196;</span>
+      <h2>Upload Police Report PDF</h2>
+      <p>Drag &amp; drop a police accident report PDF, or click to browse</p>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Select PDF File</button>
+      <input type="file" id="fileInput" accept=".pdf">
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">
+      <div class="spinner" id="statusSpinner"></div>
+      <span id="statusText"></span>
+    </div>
+
+    <!-- Verification Panel -->
+    <div class="verification-panel" id="verificationPanel">
+      <div class="panel-header">
+        <h2>Verify Extracted Data</h2>
+        <span class="claim-badge" id="claimBadge"></span>
+      </div>
+
+      <div class="form-body">
+        <!-- Client Information -->
+        <div class="field-group">
+          <h3>Client Information</h3>
+          <div class="field">
+            <label>First Name</label>
+            <input type="text" id="client_first_name">
+          </div>
+          <div class="field">
+            <label>Last Name</label>
+            <input type="text" id="client_last_name">
+          </div>
+          <div class="field">
+            <label>Date of Birth</label>
+            <input type="text" id="client_dob" placeholder="MM/DD/YYYY">
+          </div>
+          <div class="field">
+            <label>Gender</label>
+            <select id="client_gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="field span-2">
+            <label>Address</label>
+            <input type="text" id="client_address">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="text" id="client_phone">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="text" id="client_email">
+          </div>
+          <div class="field">
+            <label>Vehicle Registration Plate</label>
+            <input type="text" id="client_vehicle_plate">
+          </div>
+        </div>
+
+        <!-- Defendant Information -->
+        <div class="field-group">
+          <h3>Defendant Information</h3>
+          <div class="field">
+            <label>First Name</label>
+            <input type="text" id="defendant_first_name">
+          </div>
+          <div class="field">
+            <label>Last Name</label>
+            <input type="text" id="defendant_last_name">
+          </div>
+        </div>
+
+        <!-- Accident Details -->
+        <div class="field-group">
+          <h3>Accident Details</h3>
+          <div class="field">
+            <label>Accident Date</label>
+            <input type="text" id="accident_date" placeholder="MM/DD/YYYY">
+          </div>
+          <div class="field">
+            <label>Direction of Travel</label>
+            <input type="text" id="direction_of_travel">
+          </div>
+          <div class="field span-2">
+            <label>Accident Location</label>
+            <input type="text" id="accident_location">
+          </div>
+          <div class="field">
+            <label>Number of Injured</label>
+            <input type="text" id="number_of_injured">
+          </div>
+          <div class="field">
+            <label>Police Report Number</label>
+            <input type="text" id="police_report_number">
+          </div>
+          <div class="field span-2">
+            <label>Accident Narrative</label>
+            <textarea id="accident_narrative" rows="4"></textarea>
+          </div>
+        </div>
+
+        <!-- Derived Fields (read-only) -->
+        <div class="derived-fields">
+          <h3>Computed Fields</h3>
+          <div class="derived-row">
+            <span class="label">Claim Type</span>
+            <span class="value" id="claim_type_display">—</span>
+          </div>
+          <div class="derived-row">
+            <span class="label">Statute of Limitations</span>
+            <span class="value" id="sol_display">—</span>
+          </div>
+          <div class="derived-row">
+            <span class="label">Calendly Link</span>
+            <span class="value" id="calendly_display">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="resetForm()">Upload Another</button>
+        <button class="btn btn-primary" id="approveBtn" onclick="approveData()">Approve &amp; Send to Clio</button>
+      </div>
+    </div>
+
+    <!-- Result Section -->
+    <div class="result-section" id="resultSection">
+      <span class="checkmark">&#9989;</span>
+      <h2>Data Approved Successfully</h2>
+      <p id="resultMessage"></p>
+      <div class="json-preview" id="jsonPreview"></div>
+      <button class="btn btn-secondary" style="margin-top:1rem;" onclick="resetForm()">Process Another Report</button>
+    </div>
+  </div>
+
+  <script>
+    const FIELDS = [
+      'client_first_name', 'client_last_name', 'client_dob', 'client_gender',
+      'client_address', 'client_phone', 'client_email', 'client_vehicle_plate',
+      'defendant_first_name', 'defendant_last_name',
+      'accident_date', 'accident_location', 'direction_of_travel',
+      'number_of_injured', 'police_report_number', 'accident_narrative'
+    ];
+
+    let extractedData = null;
+
+    // ── Drag & Drop ──
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') {
+        handleUpload(file);
+      } else {
+        showStatus('error', 'Please upload a PDF file.');
+      }
+    });
+
+    uploadArea.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'BUTTON') {
+        fileInput.click();
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) {
+        handleUpload(fileInput.files[0]);
+      }
+    });
+
+    // ── Upload & Parse ──
+    async function handleUpload(file) {
+      showStatus('info', `Analyzing "${file.name}" with Claude AI... This may take 15-30 seconds.`);
+      document.getElementById('verificationPanel').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const resp = await fetch('/api/parse', { method: 'POST', body: formData });
+        const result = await resp.json();
+
+        if (!resp.ok || result.error) {
+          showStatus('error', result.error || 'Failed to parse PDF.');
+          return;
+        }
+
+        extractedData = result.data;
+        populateForm(extractedData);
+        showStatus('success', 'Data extracted successfully. Please verify each field below.');
+        document.getElementById('verificationPanel').style.display = 'block';
+        document.getElementById('uploadArea').style.display = 'none';
+      } catch (err) {
+        showStatus('error', `Network error: ${err.message}`);
+      }
+    }
+
+    // ── Populate Form ──
+    function populateForm(data) {
+      FIELDS.forEach(key => {
+        const el = document.getElementById(key);
+        if (el) el.value = data[key] || '';
+      });
+
+      // Claim badge
+      const badge = document.getElementById('claimBadge');
+      const claimType = data.claim_type || 'Property Damage Only';
+      badge.textContent = claimType;
+      badge.className = 'claim-badge ' + (claimType.includes('Bodily') ? 'injury' : 'property');
+
+      // Derived fields
+      document.getElementById('claim_type_display').textContent = claimType;
+      document.getElementById('sol_display').textContent = data.statute_of_limitations_date || '—';
+      document.getElementById('calendly_display').textContent = data.calendly_link || '—';
+    }
+
+    // ── Collect Edited Data ──
+    function collectFormData() {
+      const data = {};
+      FIELDS.forEach(key => {
+        const el = document.getElementById(key);
+        if (el) data[key] = el.value;
+      });
+
+      // Reconstruct full names
+      data.client_name = `${data.client_first_name} ${data.client_last_name}`.trim();
+      data.defendant_name = `${data.defendant_first_name} ${data.defendant_last_name}`.trim();
+
+      // Keep derived fields from original extraction
+      if (extractedData) {
+        data.statute_of_limitations_date = extractedData.statute_of_limitations_date;
+        data.calendly_link = extractedData.calendly_link;
+        data.claim_type = extractedData.claim_type;
+      }
+
+      return data;
+    }
+
+    // ── Approve & Send ──
+    async function approveData() {
+      const btn = document.getElementById('approveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      const data = collectFormData();
+
+      try {
+        const resp = await fetch('/api/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const result = await resp.json();
+
+        document.getElementById('verificationPanel').style.display = 'none';
+        document.getElementById('statusBar').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'block';
+        document.getElementById('resultMessage').textContent = result.message || 'Data sent.';
+        document.getElementById('jsonPreview').textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        showStatus('error', `Failed to send data: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Approve & Send to Clio';
+      }
+    }
+
+    // ── Reset ──
+    function resetForm() {
+      extractedData = null;
+      fileInput.value = '';
+      document.getElementById('uploadArea').style.display = 'block';
+      document.getElementById('verificationPanel').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'none';
+      document.getElementById('statusBar').style.display = 'none';
+      FIELDS.forEach(key => {
+        const el = document.getElementById(key);
+        if (el) el.value = '';
+      });
+    }
+
+    // ── Status ──
+    function showStatus(type, message) {
+      const bar = document.getElementById('statusBar');
+      const spinner = document.getElementById('statusSpinner');
+      const text = document.getElementById('statusText');
+      bar.className = 'status-bar ' + type;
+      spinner.style.display = type === 'info' ? 'block' : 'none';
+      text.textContent = message;
+    }
+  </script>
+</body>
+</html>

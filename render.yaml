@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: swans-legal-ai
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MAKE_WEBHOOK_URL
+        sync: false
+      - key: PORT
+        value: 10000
