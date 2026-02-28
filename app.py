@@ -68,11 +68,19 @@ Rules:
 - Return ONLY the JSON object, nothing else."""
 
 
-def parse_police_report(pdf_bytes: bytes) -> dict:
+def parse_police_report(pdf_bytes: bytes, filename: str = "") -> dict:
     """Use Claude Vision API to extract structured data from a police report PDF."""
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
     pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+
+    # Build the prompt, including filename context if available
+    prompt = EXTRACTION_PROMPT
+    if filename:
+        prompt += f"\n\nADDITIONAL CONTEXT — The uploaded file is named: \"{filename}\"\n"
+        prompt += "If the filename follows the pattern 'FIRSTNAME_LASTNAME_v_FIRSTNAME_LASTNAME' or similar, "
+        prompt += "the FIRST person named is the CLIENT and the SECOND person is the DEFENDANT. "
+        prompt += "Use this as a strong hint for client/defendant identification."
 
     response = client.messages.create(
         model="claude-sonnet-4-5-20250929",
@@ -91,7 +99,7 @@ def parse_police_report(pdf_bytes: bytes) -> dict:
                     },
                     {
                         "type": "text",
-                        "text": EXTRACTION_PROMPT,
+                        "text": prompt,
                     },
                 ],
             }
@@ -149,7 +157,7 @@ def api_parse():
 
     try:
         pdf_bytes = file.read()
-        extracted = parse_police_report(pdf_bytes)
+        extracted = parse_police_report(pdf_bytes, filename=file.filename or "")
 
         # Compute derived fields
         accident_date = extracted.get("accident_date", "")
