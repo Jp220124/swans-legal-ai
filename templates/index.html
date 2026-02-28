@@ -335,6 +335,19 @@
       </div>
 
       <div class="form-body">
+        <!-- Clio Matter Reference -->
+        <div class="field-group" style="background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:1rem 1.5rem;margin-bottom:1.5rem;">
+          <h3 style="color:#e65100;border-color:#e65100;">Clio Matter Reference</h3>
+          <div class="field">
+            <label>Clio Matter ID</label>
+            <input type="text" id="matter_id" placeholder="Enter existing Clio Matter ID">
+          </div>
+          <div class="field">
+            <label>Info</label>
+            <span style="font-size:0.82rem;color:#795548;padding-top:0.5rem;">The automation will update this existing matter with the extracted data, generate the retainer agreement, and send the client email.</span>
+          </div>
+        </div>
+
         <!-- Client Information -->
         <div class="field-group">
           <h3>Client Information</h3>
@@ -453,6 +466,7 @@
 
   <script>
     const FIELDS = [
+      'matter_id',
       'client_first_name', 'client_last_name', 'client_dob', 'client_gender',
       'client_address', 'client_phone', 'client_email', 'client_vehicle_plate',
       'defendant_first_name', 'defendant_last_name',
