@@ -78,9 +78,11 @@ def parse_police_report(pdf_bytes: bytes, filename: str = "") -> dict:
     prompt = EXTRACTION_PROMPT
     if filename:
         prompt += f"\n\nADDITIONAL CONTEXT — The uploaded file is named: \"{filename}\"\n"
-        prompt += "If the filename follows the pattern 'FIRSTNAME_LASTNAME_v_FIRSTNAME_LASTNAME' or similar, "
-        prompt += "the FIRST person named is the CLIENT and the SECOND person is the DEFENDANT. "
-        prompt += "Use this as a strong hint for client/defendant identification."
+        prompt += "FILENAME RULES (these OVERRIDE any ambiguity in the report narrative):\n"
+        prompt += "1. If the filename follows 'FIRSTNAME_LASTNAME_v_FIRSTNAME_LASTNAME', the FIRST person is the CLIENT and the SECOND is the DEFENDANT.\n"
+        prompt += "2. If the filename contains only ONE person's name (e.g., 'FIRSTNAME_LASTNAME_police_report'), that person IS the CLIENT. The other driver in the report is the DEFENDANT.\n"
+        prompt += "3. The filename is set by the law firm and ALWAYS refers to their client first.\n"
+        prompt += "This is a STRONG OVERRIDE — use the filename to resolve any ambiguity in the narrative."
 
     response = client.messages.create(
         model="claude-sonnet-4-5-20250929",
