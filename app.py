@@ -3,6 +3,7 @@ Swans Legal AI — Police Report Verification App
 Parses police report PDFs using Claude Vision API,
 presents extracted data for human review, then pushes
 approved data downstream (Make.com webhook → Clio).
+v2.1 — Includes Matter ID field and filename-based client identification.
 """
 
 import os
