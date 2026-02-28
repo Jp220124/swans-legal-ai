@@ -133,7 +133,11 @@ def compute_statute_of_limitations(accident_date_str: str) -> str:
     """Compute statute of limitations date (accident date + 8 years for NY PI)."""
     try:
         dt = datetime.strptime(accident_date_str, "%m/%d/%Y")
-        sol = dt.replace(year=dt.year + 8)
+        try:
+            sol = dt.replace(year=dt.year + 8)
+        except ValueError:
+            # Feb 29 leap year → target year not leap: fall back to Feb 28
+            sol = dt.replace(year=dt.year + 8, day=28)
         return sol.strftime("%m/%d/%Y")
     except (ValueError, TypeError):
         return ""
@@ -178,7 +182,11 @@ def api_parse():
 
         # Determine claim type based on injuries
         num_injured = extracted.get("number_of_injured", "0")
-        if num_injured and int(num_injured) > 0:
+        try:
+            has_injuries = num_injured and int(num_injured) > 0
+        except (ValueError, TypeError):
+            has_injuries = False
+        if has_injuries:
             extracted["claim_type"] = "Bodily Injury & Property Damage"
         else:
             extracted["claim_type"] = "Property Damage Only"

@@ -606,6 +606,12 @@
 
     // ── Approve & Send ──
     async function approveData() {
+      const matterId = document.getElementById('matter_id').value.trim();
+      if (!matterId) {
+        showStatus('error', 'Please enter a Clio Matter ID before approving.');
+        return;
+      }
+
       const btn = document.getElementById('approveBtn');
       btn.disabled = true;
       btn.textContent = 'Sending...';
