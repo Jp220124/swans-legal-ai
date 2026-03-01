@@ -206,6 +206,12 @@ def api_approve():
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
+    # Validate required fields
+    matter_id = (data.get("matter_id") or "").strip()
+    if not matter_id:
+        return jsonify({"error": "Clio Matter ID is required"}), 400
+    data["matter_id"] = matter_id
+
     # Add metadata
     data["approved_at"] = datetime.now().isoformat()
     data["approved_by"] = "Paralegal"
@@ -227,10 +233,10 @@ def api_approve():
             })
         except requests.RequestException as e:
             return jsonify({
-                "success": True,
-                "message": f"Data approved but webhook failed: {str(e)}",
+                "success": False,
+                "message": f"Data approved but webhook delivery failed: {str(e)}",
                 "data": data,
-            })
+            }), 502
     else:
         # No webhook configured — just return the approved data
         return jsonify({
