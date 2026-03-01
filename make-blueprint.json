@@ -1,0 +1,610 @@
+{
+    "name": "Swans Legal AI — Police Report to Clio Automation",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 2564784,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 0
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "data": {
+                                "editable": "true"
+                            },
+                            "label": "Swans Legal AI Webhook"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "matter_id",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_first_name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_last_name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_dob",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_gender",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_address",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_phone",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_email",
+                        "type": "text"
+                    },
+                    {
+                        "name": "client_vehicle_plate",
+                        "type": "text"
+                    },
+                    {
+                        "name": "defendant_first_name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "defendant_last_name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "defendant_name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "accident_date",
+                        "type": "text"
+                    },
+                    {
+                        "name": "accident_location",
+                        "type": "text"
+                    },
+                    {
+                        "name": "direction_of_travel",
+                        "type": "text"
+                    },
+                    {
+                        "name": "number_of_injured",
+                        "type": "text"
+                    },
+                    {
+                        "name": "accident_narrative",
+                        "type": "text"
+                    },
+                    {
+                        "name": "police_report_number",
+                        "type": "text"
+                    },
+                    {
+                        "name": "claim_type",
+                        "type": "text"
+                    },
+                    {
+                        "name": "statute_of_limitations_date",
+                        "type": "text"
+                    },
+                    {
+                        "name": "calendly_link",
+                        "type": "text"
+                    },
+                    {
+                        "name": "approved_at",
+                        "type": "text"
+                    },
+                    {
+                        "name": "approved_by",
+                        "type": "text"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "clio-manage:makeApiCall",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 5547722
+            },
+            "mapper": {
+                "url": "/api/v4/matters/{{1.matter_id}}.json?fields=custom_field_values{id,custom_field}",
+                "method": "GET",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "method": {
+                            "mode": "chose",
+                            "label": "GET"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "clio-manage"
+                            },
+                            "label": "My Clio Manage connection (Priyanshu Kumar)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:clio-manage",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 3,
+            "module": "clio-manage:makeApiCall",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 5547722
+            },
+            "mapper": {
+                "url": "/api/v4/matters/{{1.matter_id}}.json",
+                "body": "{\"data\":{\"custom_field_values\":[{\"id\":\"{{2.body.data.custom_field_values[1].id}}\",\"value\":\"{{1.accident_date}}\"},{\"id\":\"{{2.body.data.custom_field_values[3].id}}\",\"value\":\"{{1.accident_location}}\"},{\"id\":\"{{2.body.data.custom_field_values[6].id}}\",\"value\":\"{{1.defendant_name}}\"},{\"id\":\"{{2.body.data.custom_field_values[5].id}}\",\"value\":\"{{1.client_vehicle_plate}}\"},{\"id\":\"{{2.body.data.custom_field_values[2].id}}\",\"value\":\"{{1.statute_of_limitations_date}}\"},{\"id\":\"{{2.body.data.custom_field_values[9].id}}\",\"value\":\"{{1.client_gender}}\"},{\"id\":\"{{2.body.data.custom_field_values[10].id}}\",\"value\":\"{{1.accident_narrative}}\"},{\"id\":\"{{2.body.data.custom_field_values[7].id}}\",\"value\":\"{{1.direction_of_travel}}\"},{\"id\":\"{{2.body.data.custom_field_values[8].id}}\",\"value\":\"{{1.number_of_injured}}\"},{\"id\":\"{{2.body.data.custom_field_values[4].id}}\",\"value\":\"{{1.claim_type}}\"}]}}",
+                "method": "PATCH",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "method": {
+                            "mode": "chose",
+                            "label": "PATCH"
+                        },
+                        "headers": {
+                            "mode": "chose",
+                            "items": [
+                                null
+                            ]
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "clio-manage"
+                            },
+                            "label": "My Clio Manage connection (Priyanshu Kumar)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:clio-manage",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "url",
+                        "type": "text",
+                        "label": "URL",
+                        "required": true
+                    },
+                    {
+                        "name": "method",
+                        "type": "select",
+                        "label": "Method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "GET",
+                                "POST",
+                                "PUT",
+                                "PATCH",
+                                "DELETE"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "headers",
+                        "spec": [
+                            {
+                                "name": "key",
+                                "type": "text",
+                                "label": "Key"
+                            },
+                            {
+                                "name": "value",
+                                "type": "text",
+                                "label": "Value"
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Headers"
+                    },
+                    {
+                        "name": "qs",
+                        "spec": [
+                            {
+                                "name": "key",
+                                "type": "text",
+                                "label": "Key"
+                            },
+                            {
+                                "name": "value",
+                                "type": "text",
+                                "label": "Value"
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Query String"
+                    },
+                    {
+                        "name": "body",
+                        "type": "any",
+                        "label": "Body"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 6,
+            "module": "clio-manage:makeApiCall",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 5547722
+            },
+            "mapper": {
+                "url": "/api/v4/calendar_entries.json",
+                "body": "{\"data\":{\"calendar_owner\":{\"id\":8820398},\"summary\":\"STATUTE OF LIMITATIONS - {{1.client_name}} - {{1.claim_type}}\",\"description\":\"Statute of limitations expires for {{1.client_name}}'s personal injury claim. Accident Date: {{1.accident_date}}. Location: {{1.accident_location}}. Police Report #{{1.police_report_number}}. This is a HARD DEADLINE.\",\"start_at\":\"{{formatDate(parseDate(1.statute_of_limitations_date; \"MM/DD/YYYY\"); \"YYYY-MM-DD\")}}T00:00:00Z\",\"end_at\":\"{{formatDate(parseDate(1.statute_of_limitations_date; \"MM/DD/YYYY\"); \"YYYY-MM-DD\")}}T23:59:59Z\",\"all_day\":true,\"matter\":{\"id\":{{1.matter_id}}}}}",
+                "method": "POST",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 900,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "method": {
+                            "mode": "chose",
+                            "label": "POST"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "clio-manage"
+                            },
+                            "label": "My Clio Manage connection (Priyanshu Kumar)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:clio-manage",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 7,
+            "module": "clio-manage:makeApiCall",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 5547722
+            },
+            "mapper": {
+                "url": "/api/v4/document_automations.json",
+                "body": "{\"data\":{\"matter\":{\"id\":{{1.matter_id}}},\"document_template\":{\"id\":9156368},\"filename\":\"Retainer_Agreement_{{1.client_last_name}}\",\"formats\":[\"pdf\"]}}",
+                "method": "POST",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1200,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "method": {
+                            "mode": "chose",
+                            "label": "POST"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "clio-manage"
+                            },
+                            "label": "My Clio Manage connection (Priyanshu Kumar)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:clio-manage",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 100,
+            "module": "google-email:sendAnEmail",
+            "version": 4,
+            "parameters": {
+                "__IMTCONN__": 5550725
+            },
+            "mapper": {
+                "to": [
+                    "{{1.client_email}}"
+                ],
+                "content": "<p>Dear {{1.client_first_name}},</p><p>Thank you for choosing Richards & Law to represent you in your personal injury matter.</p><p>Following our review of the police report from the incident on <strong>{{1.accident_date}}</strong> at <strong>{{1.accident_location}}</strong>, we have prepared a retainer agreement for your review.</p><p><em>{{1.accident_narrative}}</em></p><p>The retainer agreement has been generated and is stored in your case file in our system. Please review it at your earliest convenience, and kindly sign and return it so we can begin working on your behalf.</p><p>To schedule your initial consultation, please use the following link:</p><p><a href='{{1.calendly_link}}'>Book Your Consultation</a></p><p>If you have any questions, please don't hesitate to reach out.</p><p>Best regards,<br>Richards & Law<br>Personal Injury Division</p>",
+                "subject": "Retainer Agreement for Your Review – Richards & Law",
+                "bodyType": "rawHtml"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1500,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "cc": {
+                            "mode": "chose"
+                        },
+                        "to": {
+                            "mode": "chose",
+                            "items": [
+                                null
+                            ]
+                        },
+                        "bcc": {
+                            "mode": "chose"
+                        },
+                        "from": {
+                            "mode": "chose"
+                        },
+                        "bodyType": {
+                            "label": "Raw HTML"
+                        },
+                        "attachments": {
+                            "mode": "chose"
+                        },
+                        "emailHeaders": {
+                            "mode": "chose"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google-email"
+                            },
+                            "label": "My Gmail connection (priyanshukumarmaurya2224@gmail.com)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google-email",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "to",
+                        "spec": {
+                            "name": "value",
+                            "type": "email",
+                            "label": "Recipient email address",
+                            "required": true,
+                            "validate": true
+                        },
+                        "type": "array",
+                        "label": "To",
+                        "required": true
+                    },
+                    {
+                        "name": "subject",
+                        "type": "text",
+                        "label": "Subject"
+                    },
+                    {
+                        "name": "bodyType",
+                        "type": "select",
+                        "label": "Body type",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "rawHtml",
+                                "collection"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "attachments",
+                        "spec": {
+                            "name": "value",
+                            "spec": [
+                                {
+                                    "name": "filename",
+                                    "type": "filename",
+                                    "label": "File name",
+                                    "required": true,
+                                    "semantic": "file:name"
+                                },
+                                {
+                                    "name": "data",
+                                    "type": "buffer",
+                                    "label": "Data",
+                                    "required": true,
+                                    "semantic": "file:data"
+                                }
+                            ],
+                            "type": "collection",
+                            "label": "Attachment"
+                        },
+                        "type": "array",
+                        "label": "Attachments"
+                    },
+                    {
+                        "name": "from",
+                        "type": "select",
+                        "label": "From"
+                    },
+                    {
+                        "name": "cc",
+                        "spec": {
+                            "name": "value",
+                            "type": "email",
+                            "label": "Recipient email address",
+                            "required": true
+                        },
+                        "type": "array",
+                        "label": "CC recipients"
+                    },
+                    {
+                        "name": "bcc",
+                        "spec": {
+                            "name": "value",
+                            "type": "email",
+                            "label": "Recipient email address",
+                            "required": true
+                        },
+                        "type": "array",
+                        "label": "BCC recipients"
+                    },
+                    {
+                        "name": "emailHeaders",
+                        "spec": {
+                            "name": "value",
+                            "spec": [
+                                {
+                                    "name": "key",
+                                    "type": "text",
+                                    "label": "Key",
+                                    "required": true
+                                },
+                                {
+                                    "name": "value",
+                                    "type": "text",
+                                    "label": "Value"
+                                }
+                            ],
+                            "type": "collection",
+                            "label": "Email header"
+                        },
+                        "type": "array",
+                        "label": "Additional email headers"
+                    },
+                    {
+                        "name": "content",
+                        "type": "text",
+                        "label": "Content"
+                    }
+                ]
+            }
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "eu1.make.com",
+        "notes": []
+    }
+}
