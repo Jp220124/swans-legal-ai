@@ -565,10 +565,15 @@
       const parts = accidentDateStr.split('/');
       if (parts.length !== 3) return '';
       const m = parseInt(parts[0], 10);
-      const d = parseInt(parts[1], 10);
+      let d = parseInt(parts[1], 10);
       const y = parseInt(parts[2], 10);
       if (isNaN(m) || isNaN(d) || isNaN(y)) return '';
       const solYear = y + 8;
+      // Leap year edge case: if accident was Feb 29 and target year is not a leap year, use Feb 28
+      if (m === 2 && d === 29) {
+        const isLeap = (solYear % 4 === 0 && solYear % 100 !== 0) || (solYear % 400 === 0);
+        if (!isLeap) d = 28;
+      }
       return `${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${solYear}`;
     }
 
